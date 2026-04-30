@@ -1,0 +1,9 @@
+*.b64
+_qa-*.jpg
+_qa-*.png
+_test.pdf
+_pptx_repack/
+*.pptx
+*.png
+node_modules/
+deck-small.pptx

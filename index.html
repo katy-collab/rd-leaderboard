@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RD Leaderboard — Sales & Retention</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  /* =========================================================
+     RD Leaderboard — Weekly View
+     Refresh: replace SALES_DATA and RETENTION_DATA blocks below
+  ========================================================= */
+  :root {
+    --bg: #f4f6fb; --card: #ffffff; --ink: #0f172a; --ink-2: #334155;
+    --muted: #64748b; --line: #e2e8f0;
+    --sales-1: #4f46e5; --sales-2: #7c3aed;
+    --ret-1: #0d9488;   --ret-2: #0891b2;
+    --gold: #f5b301;    --gold-2: #d49000;
+    --good: #10b981;    --warn: #f59e0b; --bad: #ef4444;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: linear-gradient(180deg, #eef1f8 0%, #f4f6fb 320px);
+    color: var(--ink); -webkit-font-smoothing: antialiased;
+    min-height: 100vh; padding: 32px 20px 64px;
+  }
+  .shell { max-width: 1240px; margin: 0 auto; }
+
+  .page-header {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+    color: white; border-radius: 20px; padding: 28px 36px;
+    box-shadow: 0 20px 50px -20px rgba(30, 27, 75, 0.45);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 16px;
+  }
+  .page-header .eyebrow { text-transform: uppercase; letter-spacing: 2px; font-size: 11px; font-weight: 700; opacity: 0.7; margin: 0 0 4px; }
+  .page-header h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
+  .week-pill {
+    background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22);
+    backdrop-filter: blur(8px); border-radius: 999px;
+    padding: 9px 16px; font-size: 13px; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .week-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: #34d399; box-shadow: 0 0 0 4px rgba(52,211,153,0.25); }
+
+  .section { margin-top: 36px; }
+  .section-header {
+    border-radius: 18px; padding: 24px 32px; color: white;
+    box-shadow: 0 14px 40px -22px rgba(15, 23, 42, 0.4);
+    position: relative; overflow: hidden;
+  }
+  .section.sales .section-header { background: linear-gradient(135deg, var(--sales-1) 0%, var(--sales-2) 100%); }
+  .section.retention .section-header { background: linear-gradient(135deg, var(--ret-1) 0%, var(--ret-2) 100%); }
+  .section-header::before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(circle at 90% -20%, rgba(255,255,255,0.18), transparent 55%);
+    pointer-events: none;
+  }
+  .section-header .eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; font-weight: 700; opacity: 0.85; margin: 0 0 6px; }
+  .section-header h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 4px; }
+  .section-header p { margin: 0; opacity: 0.9; font-size: 14px; }
+
+  .tiles { display: grid; gap: 12px; margin-top: 20px; position: relative; }
+  .retention .tiles { grid-template-columns: repeat(4, 1fr); }
+  .tile {
+    background: rgba(255,255,255,0.13); border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 14px; padding: 14px 16px;
+  }
+  .tile .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px; opacity: 0.8; font-weight: 700; }
+  .tile .value { font-size: 26px; font-weight: 800; margin-top: 4px; letter-spacing: -0.02em; }
+  .tile .sub   { font-size: 11px; opacity: 0.8; margin-top: 2px; }
+
+  .hero-stat {
+    background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 14px; padding: 24px 26px; margin-top: 20px; position: relative;
+    display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    flex-wrap: wrap;
+  }
+  .hero-stat .label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px; opacity: 0.85; font-weight: 700; }
+  .hero-stat .big { font-size: 56px; font-weight: 900; letter-spacing: -0.03em; line-height: 1; margin-top: 4px; }
+  .hero-stat .ctx { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+  .attain-badge {
+    background: rgba(255,255,255,0.22); border-radius: 16px;
+    padding: 16px 24px; font-weight: 800; line-height: 1;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+  }
+  .attain-badge .pct { font-size: 44px; letter-spacing: -0.02em; }
+  .attain-badge .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px; opacity: 0.85; font-weight: 700; }
+
+  .table-card {
+    background: var(--card); border-radius: 18px; overflow: hidden;
+    border: 1px solid var(--line); box-shadow: 0 10px 30px -18px rgba(15, 23, 42, 0.15);
+    margin-top: 16px;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--muted); font-weight: 700; padding: 14px 16px;
+    background: #f8fafc; border-bottom: 1px solid var(--line);
+  }
+  thead th.num, td.num { text-align: right; }
+  thead .group-row th {
+    text-align: center; font-size: 10px; letter-spacing: 1.6px;
+    padding: 10px 16px 6px;
+    background: #f1f5f9; color: var(--ink-2); font-weight: 800;
+    border-bottom: 0;
+  }
+  thead .group-row .group-net    { color: #1e1b4b; }
+  thead .group-row .group-excl   { color: #064e3b; }
+  thead .group-row .spacer       { background: #f1f5f9; }
+  thead .col-headers th { padding-top: 8px; }
+  .col-divider { border-left: 2px solid var(--line); }
+
+  tbody td { padding: 13px 16px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: #fafbff; }
+
+  .rank-pill {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 32px; height: 32px; border-radius: 8px;
+    background: #f1f5f9; font-weight: 700; color: var(--ink-2); padding: 0 8px;
+  }
+  .rank-pill.top1 { background: linear-gradient(135deg, #fff7d6, #fde68a); color: #92580a; }
+  .rank-pill.top2 { background: linear-gradient(135deg, #f1f5f9, #e2e8f0); color: #475569; }
+  .rank-pill.top3 { background: linear-gradient(135deg, #fde6cf, #f8c08a); color: #8a4318; }
+
+  .rep-cell { display: flex; align-items: center; gap: 12px; }
+  .rep-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    color: white; font-weight: 700; font-size: 13px;
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .rep-meta { display: flex; flex-direction: column; line-height: 1.2; }
+  .rep-meta .nm { font-weight: 600; color: var(--ink); }
+  .rep-meta .rg { font-size: 12px; color: var(--muted); }
+
+  /* Compact bars (sales) */
+  .progress { display: flex; align-items: center; gap: 10px; min-width: 130px; }
+  .bar { flex: 1; height: 8px; background: #eef2f7; border-radius: 999px; overflow: hidden; position: relative; }
+  .bar > span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--sales-1), var(--sales-2)); transition: width 0.4s ease; }
+  .bar.retention > span { background: linear-gradient(90deg, var(--ret-1), var(--ret-2)); }
+  .bar.target.over > span { background: linear-gradient(90deg, var(--gold), #f59e0b); }
+  .bar.below-target > span { background: linear-gradient(90deg, #94a3b8, #64748b); }
+  .pct { font-weight: 700; font-size: 13px; min-width: 44px; text-align: right; }
+  .pct.good { color: var(--good); }
+  .pct.warn { color: var(--warn); }
+  .pct.bad  { color: var(--bad); }
+  .num-strong { font-weight: 700; font-size: 14px; color: var(--ink); }
+
+  .footer { margin-top: 36px; text-align: center; color: var(--muted); font-size: 12px; line-height: 1.6; }
+  .footer code { background: #eef2f7; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+
+  @media (max-width: 980px) {
+    .retention .tiles { grid-template-columns: repeat(2, 1fr); }
+    .hero-stat .big { font-size: 44px; }
+    .attain-badge .pct { font-size: 32px; }
+    thead .hide-sm, tbody .hide-sm { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">3i Members</p>
+      <h1>RD Leaderboard</h1>
+    </div>
+    <div class="week-pill"><span class="dot"></span><span id="weekPill">—</span></div>
+  </header>
+
+  <!-- ================= SALES SECTION ================= -->
+  <section class="section sales">
+    <div class="section-header">
+      <p class="eyebrow">Section 1</p>
+      <h2>Sales</h2>
+      <p>QTD performance against quarterly targets, ranked by members closed this quarter. Sourcing and closing are each worth 0.5.</p>
+
+      <div class="hero-stat">
+        <div>
+          <div class="label">Unique New Members — Q2 to Date</div>
+          <div class="big" id="qtdMembers">—</div>
+          <div class="ctx" id="qtdMembersCtx">—</div>
+        </div>
+        <div class="attain-badge">
+          <span class="pct" id="qtdAttainPct">—</span>
+          <span class="lbl">to Q2 target</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>RD</th>
+            <th class="num">Q2 Actuals</th>
+            <th class="num hide-sm">Q2 Target</th>
+            <th>% to Target</th>
+          </tr>
+        </thead>
+        <tbody id="salesBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= RETENTION SECTION ================= -->
+  <section class="section retention">
+    <div class="section-header">
+      <p class="eyebrow">Section 2</p>
+      <h2>Retention</h2>
+      <p>Quarter-to-date renewals vs. forecasted retention. Target for all RDs: 80%.</p>
+
+      <div class="tiles">
+        <div class="tile">
+          <div class="label">QTD Retention</div>
+          <div class="value" id="totQtd">—</div>
+          <div class="sub" id="totQtdSub">—</div>
+        </div>
+        <div class="tile">
+          <div class="label">QTD Excl. Exemptions</div>
+          <div class="value" id="totQtdEx">—</div>
+          <div class="sub" id="totQtdExSub">—</div>
+        </div>
+        <div class="tile">
+          <div class="label">Forecasted Retention</div>
+          <div class="value" id="totFc">—</div>
+          <div class="sub" id="totFcSub">—</div>
+        </div>
+        <div class="tile">
+          <div class="label">Forecasted Excl. Exemptions</div>
+          <div class="value" id="totFcEx">—</div>
+          <div class="sub" id="totFcExSub">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr class="group-row">
+            <th rowspan="2" style="vertical-align: bottom; text-align:left; padding-bottom: 12px;">RD</th>
+            <th class="group-net" colspan="3">Net Retention</th>
+            <th class="group-excl col-divider" colspan="3">Excluding Exemptions</th>
+          </tr>
+          <tr class="col-headers">
+            <th class="num">Up for Renewal</th>
+            <th>QTD Rate</th>
+            <th>Forecasted Rate</th>
+            <th class="num col-divider">Up for Renewal</th>
+            <th>QTD Rate</th>
+            <th>Forecasted Rate</th>
+          </tr>
+        </thead>
+        <tbody id="retBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <p class="footer">
+    Sources: <code>Membership | METRICS</code> (sales) and <code>Retention Cases</code> (retention).
+    Refresh weekly by replacing <code>SALES_DATA</code> and <code>RETENTION_DATA</code> blocks at the bottom of this file.
+  </p>
+</div>
+
+<!-- =========================================================
+     SALES_DATA — refresh weekly from Membership | METRICS
+========================================================= -->
+<script id="sales-data" type="application/json">
+{
+  "period_label": "Q2 2026",
+  "qtd_unique_new_members": 27,
+  "qtd_team_target": 108,
+  "reps": [
+    { "rep_name": "Marla Bermack",       "region": "Hybrid (NYC)",            "q2_actual": 5.5, "q2_target": 10 },
+    { "rep_name": "Camile Bowman",       "region": "Canada",                  "q2_actual": 4,   "q2_target": 5 },
+    { "rep_name": "Victor Perez-Abreu",  "region": "South (Florida)",         "q2_actual": 3,   "q2_target": 6.5 },
+    { "rep_name": "Yoni Nadel",          "region": "EMEA (Middle East)",      "q2_actual": 2.5, "q2_target": 5 },
+    { "rep_name": "Amanda Nelson",       "region": "South (Texas)",           "q2_actual": 2.5, "q2_target": 5 },
+    { "rep_name": "Anthony Nardini",     "region": "West (LA / SoCal)",       "q2_actual": 2.5, "q2_target": 10 },
+    { "rep_name": "Cassie Lewis",        "region": "Northeast (NYC, EMEA)",   "q2_actual": 2,   "q2_target": 6.5 },
+    { "rep_name": "Sam Isaacs",          "region": "EMEA (Europe)",           "q2_actual": 2,   "q2_target": 5 },
+    { "rep_name": "Cathy Oved",          "region": "South (Florida)",         "q2_actual": 1.5, "q2_target": 10 },
+    { "rep_name": "Daniel Jeydel",       "region": "Hybrid",                  "q2_actual": 1.5, "q2_target": 12.5 },
+    { "rep_name": "Cissy Hu",            "region": "West (SF)",               "q2_actual": 1.5, "q2_target": 7.5 },
+    { "rep_name": "Allegra Toub",        "region": "Northeast (NYC, Boston)", "q2_actual": 1,   "q2_target": 10 },
+    { "rep_name": "Elizabeth Mash",      "region": "Midwest (Chicago)",       "q2_actual": 0.5, "q2_target": 5 },
+    { "rep_name": "Vanessa Keushkerian", "region": "Northeast (NYC, DC)",     "q2_actual": 0,   "q2_target": 10 }
+  ]
+}
+</script>
+
+<!-- =========================================================
+     RETENTION_DATA — refresh weekly from Retention Cases
+     Net values: TOTAL INDIVIDUAL RETENTION table
+     Excluding values: TOTAL INDIVIDUAL RETENTION EXCLUDING
+     EXEMPTIONS table (cells AP1:AX25 of the gid=1435681789 tab)
+========================================================= -->
+<script id="retention-data" type="application/json">
+{
+  "totals": {
+    "qtd_actual_pct":              28,
+    "qtd_actual_renewed":          50,
+    "qtd_actual_up_for_renewal":   177,
+    "qtd_excl_exemptions_pct":     30,
+    "qtd_excl_renewed":            49,
+    "qtd_excl_up_for_renewal":     166,
+    "forecasted_pct":              73,
+    "forecasted_renewed":          130,
+    "forecasted_up_for_renewal":   177,
+    "forecasted_excl_pct":         77,
+    "forecasted_excl_renewed":     128,
+    "forecasted_excl_up_for_renewal": 166
+  },
+  "reps": [
+    { "rep_name": "Camile Bowman",       "up_for_renewal": 4,  "renewed": 3, "qtd_pct": 75, "forecasted_pct": 100, "up_excl": 4,  "qtd_pct_excl": 75, "forecasted_pct_excl": 100 },
+    { "rep_name": "Sam Isaacs",          "up_for_renewal": 6,  "renewed": 1, "qtd_pct": 17, "forecasted_pct": 100, "up_excl": 6,  "qtd_pct_excl": 17, "forecasted_pct_excl": 100 },
+    { "rep_name": "Victor Perez-Abreu",  "up_for_renewal": 16, "renewed": 5, "qtd_pct": 31, "forecasted_pct": 94,  "up_excl": 16, "qtd_pct_excl": 31, "forecasted_pct_excl": 94 },
+    { "rep_name": "Marla Bermack",       "up_for_renewal": 16, "renewed": 4, "qtd_pct": 25, "forecasted_pct": 88,  "up_excl": 14, "qtd_pct_excl": 29, "forecasted_pct_excl": 100 },
+    { "rep_name": "Vanessa Keushkerian", "up_for_renewal": 15, "renewed": 5, "qtd_pct": 33, "forecasted_pct": 80,  "up_excl": 15, "qtd_pct_excl": 33, "forecasted_pct_excl": 80 },
+    { "rep_name": "Amanda Nelson",       "up_for_renewal": 9,  "renewed": 4, "qtd_pct": 44, "forecasted_pct": 78,  "up_excl": 9,  "qtd_pct_excl": 44, "forecasted_pct_excl": 78 },
+    { "rep_name": "Cassie Lewis",        "up_for_renewal": 22, "renewed": 5, "qtd_pct": 23, "forecasted_pct": 73,  "up_excl": 20, "qtd_pct_excl": 20, "forecasted_pct_excl": 75 },
+    { "rep_name": "Allegra Toub",        "up_for_renewal": 24, "renewed": 5, "qtd_pct": 21, "forecasted_pct": 71,  "up_excl": 21, "qtd_pct_excl": 24, "forecasted_pct_excl": 81 },
+    { "rep_name": "Cathy Oved",          "up_for_renewal": 20, "renewed": 4, "qtd_pct": 20, "forecasted_pct": 70,  "up_excl": 18, "qtd_pct_excl": 22, "forecasted_pct_excl": 72 },
+    { "rep_name": "Elizabeth Mash",      "up_for_renewal": 24, "renewed": 6, "qtd_pct": 25, "forecasted_pct": 63,  "up_excl": 24, "qtd_pct_excl": 25, "forecasted_pct_excl": 63 },
+    { "rep_name": "Cissy Hu",            "up_for_renewal": 9,  "renewed": 4, "qtd_pct": 44, "forecasted_pct": 56,  "up_excl": 9,  "qtd_pct_excl": 44, "forecasted_pct_excl": 56 },
+    { "rep_name": "Anthony Nardini",     "up_for_renewal": 11, "renewed": 4, "qtd_pct": 36, "forecasted_pct": 45,  "up_excl": 9,  "qtd_pct_excl": 44, "forecasted_pct_excl": 56 },
+    { "rep_name": "Yoni Nadel",          "up_for_renewal": 1,  "renewed": 0, "qtd_pct": 0,  "forecasted_pct": 0,   "up_excl": 1,  "qtd_pct_excl": 0,  "forecasted_pct_excl": 0 }
+  ]
+}
+</script>
+
+<script>
+  const RETENTION_TARGET = 80;
+  const fmtNum = n => Number.isInteger(n) ? n.toString() : n.toFixed(1);
+  const initials = name => name.split(/\s+/).map(p => p[0]).slice(0,2).join('').toUpperCase();
+  const palettes = [
+    ['#4f46e5','#7c3aed'], ['#0ea5e9','#2563eb'], ['#10b981','#059669'],
+    ['#f59e0b','#d97706'], ['#ec4899','#db2777'], ['#14b8a6','#0d9488'],
+    ['#8b5cf6','#6d28d9'], ['#f43f5e','#be123c'], ['#06b6d4','#0891b2'],
+    ['#84cc16','#65a30d'], ['#a855f7','#7e22ce'], ['#ef4444','#b91c1c'],
+    ['#3b82f6','#1d4ed8'], ['#22c55e','#15803d'], ['#eab308','#a16207']
+  ];
+  const colorFor = name => {
+    let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffffffff;
+    return palettes[Math.abs(h) % palettes.length];
+  };
+  const gradient = ([a,b]) => `linear-gradient(135deg, ${a}, ${b})`;
+  const attainClass = pct => pct >= 100 ? 'good' : pct >= 50 ? 'warn' : 'bad';
+  const retClass    = pct => pct >= RETENTION_TARGET ? 'good' : pct >= 60 ? 'warn' : 'bad';
+
+  // Sales
+  const sales = JSON.parse(document.getElementById('sales-data').textContent);
+  document.getElementById('weekPill').textContent = sales.period_label;
+  const teamAttainPct = (sales.qtd_unique_new_members / sales.qtd_team_target) * 100;
+  document.getElementById('qtdMembers').textContent    = sales.qtd_unique_new_members;
+  document.getElementById('qtdMembersCtx').textContent = `vs Q2 target of ${sales.qtd_team_target} new members`;
+  document.getElementById('qtdAttainPct').textContent  = `${teamAttainPct.toFixed(0)}%`;
+
+  const sortedSales = [...sales.reps].sort((a, b) => b.q2_actual - a.q2_actual);
+  sortedSales.forEach((r, i) => r.rank = i + 1);
+
+  const salesBody = document.getElementById('salesBody');
+  sortedSales.forEach(r => {
+    const attain = (r.q2_actual / r.q2_target) * 100;
+    const colors = colorFor(r.rep_name);
+    const rankCls = r.rank === 1 ? 'top1' : r.rank === 2 ? 'top2' : r.rank === 3 ? 'top3' : '';
+    // 100% = full bar; over-100% caps at full bar but uses gold gradient
+    const barWidth = Math.min(attain, 100);
+    const targetCls = attain >= 100 ? 'over' : 'under';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="rank-pill ${rankCls}">${r.rank}</span></td>
+      <td>
+        <div class="rep-cell">
+          <span class="rep-avatar" style="background:${gradient(colors)}">${initials(r.rep_name)}</span>
+          <span class="rep-meta">
+            <span class="nm">${r.rep_name}</span>
+            <span class="rg">${r.region || ''}</span>
+          </span>
+        </div>
+      </td>
+      <td class="num"><span class="num-strong">${fmtNum(r.q2_actual)}</span></td>
+      <td class="num hide-sm">${fmtNum(r.q2_target)}</td>
+      <td>
+        <div class="progress">
+          <div class="bar target ${targetCls}"><span style="width:${barWidth}%"></span></div>
+          <span class="pct ${attainClass(attain)}">${attain.toFixed(0)}%</span>
+        </div>
+      </td>
+    `;
+    salesBody.appendChild(tr);
+  });
+
+  // Retention
+  const ret = JSON.parse(document.getElementById('retention-data').textContent);
+  const t = ret.totals;
+  document.getElementById('totQtd').textContent      = `${t.qtd_actual_pct}%`;
+  document.getElementById('totQtdSub').textContent   = `${t.qtd_actual_renewed} of ${t.qtd_actual_up_for_renewal}`;
+  document.getElementById('totQtdEx').textContent    = `${t.qtd_excl_exemptions_pct}%`;
+  document.getElementById('totQtdExSub').textContent = `${t.qtd_excl_renewed} of ${t.qtd_excl_up_for_renewal}`;
+  document.getElementById('totFc').textContent       = `${t.forecasted_pct}%`;
+  document.getElementById('totFcSub').textContent    = `${t.forecasted_renewed} of ${t.forecasted_up_for_renewal} forecasted`;
+  document.getElementById('totFcEx').textContent     = `${t.forecasted_excl_pct}%`;
+  document.getElementById('totFcExSub').textContent  = `${t.forecasted_excl_renewed} of ${t.forecasted_excl_up_for_renewal} forecasted`;
+
+  const sortedRet = [...ret.reps].sort((a, b) => b.forecasted_pct - a.forecasted_pct);
+  const retBody = document.getElementById('retBody');
+
+  const retCell = (pct, isExcl) => {
+    const w = Math.min(pct, 100);
+    const onTrack = pct >= RETENTION_TARGET;
+    const divider = isExcl ? ' col-divider' : '';
+    return `
+      <td class="${divider.trim()}">
+        <div class="progress">
+          <div class="bar retention ${onTrack ? '' : 'below-target'}"><span style="width:${w}%"></span></div>
+          <span class="pct ${retClass(pct)}">${pct}%</span>
+        </div>
+      </td>`;
+  };
+
+  sortedRet.forEach(r => {
+    const colors = colorFor(r.rep_name);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <div class="rep-cell">
+          <span class="rep-avatar" style="background:${gradient(colors)}">${initials(r.rep_name)}</span>
+          <span class="rep-meta">
+            <span class="nm">${r.rep_name}</span>
+            <span class="rg">${r.renewed} renewed so far</span>
+          </span>
+        </div>
+      </td>
+      <td class="num"><span class="num-strong">${r.up_for_renewal}</span></td>
+      ${retCell(r.qtd_pct, false)}
+      ${retCell(r.forecasted_pct, false)}
+      <td class="num col-divider"><span class="num-strong">${r.up_excl}</span></td>
+      ${retCell(r.qtd_pct_excl, false)}
+      ${retCell(r.forecasted_pct_excl, false)}
+    `;
+    retBody.appendChild(tr);
+  });
+</script>
+</body>
+</html>
